@@ -5,64 +5,53 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 
-// Home Route
-app.get('/', (req, res) => {
-    res.send('Song Search API is Live! Use /api/search?name=SongName');
-});
-
-// Search API Endpoint
+// API search endpoint
 app.get('/api/search', async (req, res) => {
-    const query = req.query.name;
+    const songName = req.query.name;
 
-    if (!query) {
-        return res.status(400).json({ 
-            status: false, 
-            message: "කරුණාකර සින්දුවේ නමක් ලබා දෙන්න." 
-        });
+    if (!songName) {
+        return res.status(400).json({ status: false, message: "සින්දුවේ නම ඇතුළත් කරන්න." });
     }
 
     try {
-        // YouTube එකේ සින්දුව සර්ච් කරනවා
-        const results = await yts(query);
-        const video = results.videos[0]; // පලවෙනි result එක ගන්නවා
+        // YouTube එකේ search කිරීම
+        const searchResult = await yts(songName);
+        const video = searchResult.videos[0]; // පලවෙනි result එක විතරක් ගන්නවා
 
         if (!video) {
-            return res.json({ 
-                status: false, 
-                message: "සින්දුව හමු නොවීය." 
-            });
+            return res.status(404).json({ status: false, message: "සින්දුව හමු නොවීය." });
         }
 
-        // Direct MP3 Download Button Link (Stable External Service)
-        const downloadLink = `https://api.vevioz.com/@api/button/mp3/${video.videoId}`;
+        // YouTube details සහ Download link එක සකස් කිරීම
+        // මෙතනදී අපි Video ID එක පාවිච්චි කරලා Download link එක හදනවා
+        const downloadUrl = `https://api.vevioz.com/@api/button/mp3/${video.videoId}`;
 
         res.json({
             status: true,
+            creator: "Sandaru Udan",
             results: {
                 title: video.title,
                 artist: video.author.name,
-                image: video.thumbnail,
                 duration: video.timestamp,
                 views: video.views,
-                publish_date: video.ago,
-                download: downloadLink, // මේ ලින්ක් එකෙන් කෙලින්ම MP3 ගන්න පුළුවන්
-                source_url: video.url
+                posted: video.ago,
+                thumbnail: video.thumbnail, // Poster එක
+                download_link: downloadUrl, // MP3 ගන්න ලින්ක් එක
+                youtube_url: video.url
             }
         });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ 
-            status: false, 
-            message: "Server Error",
-            error_details: error.message
-        });
+        res.status(500).json({ status: false, error: error.message });
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+// Default route
+app.get('/', (req, res) => {
+    res.json({ message: "YouTube Song Search API is Live!" });
 });
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 module.exports = app;
