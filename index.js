@@ -5,26 +5,30 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 
-// API search endpoint
 app.get('/api/search', async (req, res) => {
     const songName = req.query.name;
 
     if (!songName) {
-        return res.status(400).json({ status: false, message: "සින්දුවේ නම ඇතුළත් කරන්න." });
+        return res.status(400).json({ 
+            status: false, 
+            message: "කරුණාකර සින්දුවේ නම ඇතුළත් කරන්න. (Example: ?name=manike mage hithe)" 
+        });
     }
 
     try {
-        // YouTube එකේ search කිරීම
+        // YouTube එකේ සින්දුව සර්ච් කිරීම
         const searchResult = await yts(songName);
-        const video = searchResult.videos[0]; // පලවෙනි result එක විතරක් ගන්නවා
+        const video = searchResult.videos[0]; 
 
         if (!video) {
-            return res.status(404).json({ status: false, message: "සින්දුව හමු නොවීය." });
+            return res.status(404).json({ 
+                status: false, 
+                message: "සින්දුව හමු නොවීය." 
+            });
         }
 
-        // YouTube details සහ Download link එක සකස් කිරීම
-        // මෙතනදී අපි Video ID එක පාවිච්චි කරලා Download link එක හදනවා
-        const downloadUrl = `https://api.vevioz.com/@api/button/mp3/${video.videoId}`;
+        // Direct MP3 ලබාගන්නා ලින්ක් එක (Stable Server)
+        const downloadUrl = `https://api.vkrdown.com/server/index.php?url=${encodeURIComponent(video.url)}&format=mp3`;
 
         res.json({
             status: true,
@@ -34,24 +38,27 @@ app.get('/api/search', async (req, res) => {
                 artist: video.author.name,
                 duration: video.timestamp,
                 views: video.views,
-                posted: video.ago,
-                thumbnail: video.thumbnail, // Poster එක
-                download_link: downloadUrl, // MP3 ගන්න ලින්ක් එක
+                thumbnail: video.thumbnail,
+                download_link: downloadUrl, // කෙලින්ම MP3 ගන්න ලින්ක් එක
                 youtube_url: video.url
             }
         });
 
     } catch (error) {
-        res.status(500).json({ status: false, error: error.message });
+        res.status(500).json({ 
+            status: false, 
+            error: "දත්ත ලබා ගැනීමේදී දෝෂයක් සිදුවිය.",
+            details: error.message 
+        });
     }
 });
 
-// Default route
+// මුල් පිටුව
 app.get('/', (req, res) => {
-    res.json({ message: "YouTube Song Search API is Live!" });
+    res.json({ 
+        message: "YouTube Song Search API is Live!",
+        creator: "Sandaru Udan"
+    });
 });
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 module.exports = app;
