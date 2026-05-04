@@ -9,27 +9,18 @@ app.get('/api/search', async (req, res) => {
     const songName = req.query.name;
 
     if (!songName) {
-        return res.status(400).json({ 
-            status: false, 
-            message: "කරුණාකර සින්දුවේ නම ඇතුළත් කරන්න. (Example: ?name=manike mage hithe)" 
-        });
+        return res.status(400).json({ status: false, message: "කරුණාකර සින්දුවේ නම ඇතුළත් කරන්න." });
     }
 
     try {
-        // YouTube එකේ සින්දුව සර්ච් කිරීම
         const searchResult = await yts(songName);
-        const video = searchResult.videos[0]; 
+        const video = searchResult.videos[0];
 
         if (!video) {
-            return res.status(404).json({ 
-                status: false, 
-                message: "සින්දුව හමු නොවීය." 
-            });
+            return res.status(404).json({ status: false, message: "සින්දුව හමු නොවීය." });
         }
 
-        // Direct MP3 ලබාගන්නා ලින්ක් එක (Stable Server)
-        const downloadUrl = `https://api.vkrdown.com/server/index.php?url=${encodeURIComponent(video.url)}&format=mp3`;
-
+        // මෙතනදී අපි එවන්නේ YouTube එකේ මුල් ලින්ක් එක විතරයි
         res.json({
             status: true,
             creator: "Sandaru Udan",
@@ -39,26 +30,18 @@ app.get('/api/search', async (req, res) => {
                 duration: video.timestamp,
                 views: video.views,
                 thumbnail: video.thumbnail,
-                download_link: downloadUrl, // කෙලින්ම MP3 ගන්න ලින්ක් එක
-                youtube_url: video.url
+                youtube_url: video.url, // ප්‍රධාන YouTube ලින්ක් එක
+                video_id: video.videoId  // වීඩියෝ එකේ ID එක
             }
         });
 
     } catch (error) {
-        res.status(500).json({ 
-            status: false, 
-            error: "දත්ත ලබා ගැනීමේදී දෝෂයක් සිදුවිය.",
-            details: error.message 
-        });
+        res.status(500).json({ status: false, error: "දෝෂයක් සිදුවිය." });
     }
 });
 
-// මුල් පිටුව
 app.get('/', (req, res) => {
-    res.json({ 
-        message: "YouTube Song Search API is Live!",
-        creator: "Sandaru Udan"
-    });
+    res.json({ message: "YouTube Link API is Live!", creator: "Sandaru Udan" });
 });
 
 module.exports = app;
